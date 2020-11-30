@@ -4,18 +4,22 @@ import logging
 from time import time
 
 PLAYERS = ["x", "o"]
-COLORS = [
-    "\033[91m", # red
-    "\033[94m" # blue
-]
+COLORS = ["\033[91m", "\033[94m"]  # red  # blue
 
 BOARD_SPACES = [
-    "TL", "TM", "TR",
-    "ML", "MM", "MR",
-    "BL", "BM", "BR",
+    "TL",
+    "TM",
+    "TR",
+    "ML",
+    "MM",
+    "MR",
+    "BL",
+    "BM",
+    "BR",
 ]
 
 PAYOFFS = {}
+
 
 class Node:
     def __init__(self, value="", player=1, state=""):
@@ -33,11 +37,11 @@ class Node:
             return ""
 
         color = COLORS[self.player]
-        ret = "" if not self. value else color + "   " * level + "|" + "__" + self.value
+        ret = "" if not self.value else color + "   " * level + "|" + "__" + self.value
         if level < MAX_LEVEL and self.children:
             ret += "\n"
             for child in self.children:
-                ret += child.__str__(level+1)
+                ret += child.__str__(level + 1)
         else:
             p1, p2 = find_spne(self, 1 - self.player).payoff
             ret += f" ({p1:.2f}, {p2:.2f})\n"
@@ -109,6 +113,7 @@ def utility(payoff, levels):
 
     return payoff
 
+
 def parse_player(value):
     return PLAYERS.index(value)
 
@@ -124,9 +129,10 @@ def parse_state(value):
 
 
 def print_state(state):
-    def row(a,b):
+    def row(a, b):
         return " " + " | ".join(state[a:b]) + "\n"
-    rows = [row(i*3,(i+1)*3) for i in range(3)]
+
+    rows = [row(i * 3, (i + 1) * 3) for i in range(3)]
 
     divider = "-----------\n"
     print(divider.join(rows))
@@ -212,15 +218,34 @@ def main(args):
     print_state(find_spne_state(spne))
     logging.debug("Time to find SPNE: %f seconds", end - start)
 
+
 if __name__ == "__main__":
     ap = ArgumentParser()
-    ap.add_argument("starting_state", type=str, default="", help="Starting state of the board from top-left to bottom-right. Example: \"xxo..ox..\"")
-    ap.add_argument("player", type=str, choices=PLAYERS, default=PLAYERS[0], help="Player whose turn it is")
+    ap.add_argument(
+        "starting_state",
+        type=str,
+        default="",
+        help='Starting state of the board from top-left to bottom-right. Example: "xxo..ox.."',
+    )
+    ap.add_argument(
+        "player",
+        type=str,
+        choices=PLAYERS,
+        default=PLAYERS[0],
+        help="Player whose turn it is",
+    )
     ap.add_argument("--gt", type=int, default=0, help="Levels of game tree to print")
     ap.add_argument("-v", action="store_true", help="Enable verbose output")
     ap.add_argument("-w", "--win", type=int, default=1, help="Payoff for win")
     ap.add_argument("-l", "--lose", type=int, default=-1, help="Payoff for lose")
     ap.add_argument("-t", "--tie", type=int, default=0, help="Payoff for tie")
-    ap.add_argument("-g", "--goal", type=str, default=None, choices=["none", "shortest"], help="Goal for utility function")
+    ap.add_argument(
+        "-g",
+        "--goal",
+        type=str,
+        default=None,
+        choices=["none", "shortest"],
+        help="Goal for utility function",
+    )
     args = ap.parse_args()
     main(args)
