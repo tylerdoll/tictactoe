@@ -39,7 +39,8 @@ class Node:
             for child in self.children:
                 ret += child.__str__(level+1)
         else:
-            ret += " " + str(find_spne(self, 1 - self.player)[0].payoff) + "\n"
+            p1, p2 = find_spne(self, 1 - self.player).payoff
+            ret += f" ({p1:.2f}, {p2:.2f})\n"
         return ret
 
 
@@ -67,7 +68,7 @@ def winner(state):
                 return v[0]
 
 
-def build_subgame(root, spaces, player):
+def build_subgame(root, spaces, player, level=1):
     num_games = int(len(spaces) == 0)
 
     for space in spaces:
@@ -81,26 +82,30 @@ def build_subgame(root, spaces, player):
         if w:
             player_wins = w == PLAYERS[player]
 
-            payoff = [PAYOFFS["tie"]] * 2
-            payoff[player] = PAYOFFS["win"] if player_wins else PAYOFFS["lose"]
-            payoff[1 - player] = PAYOFFS["lose"] if player_wins else PAYOFFS["win"]
+            pt = utility(PAYOFFS["tie"], level)
+            pw = utility(PAYOFFS["win"], level)
+            pl = utility(PAYOFFS["lose"], level)
+
+            payoff = [pt] * 2
+            payoff[player] = pw if player_wins else pl
+            payoff[1 - player] = pl if player_wins else pw
             child.payoff = payoff
 
             free_spaces = []
         else:
             free_spaces = [s for s in spaces if s != space]
 
-        num_games += build_subgame(child, free_spaces, 1 - player)
+        num_games += build_subgame(child, free_spaces, 1 - player, level + 1)
 
         root.add_child(child)
 
     return num_games
 
 
-def utility(payoff, levels, goal=None):
-    if goal == "shortest":
+def utility(payoff, levels):
+    if GOAL == "shortest":
         min_turns = 3
-        return payoff - (1 - (min_turns / levels))
+        return payoff * (1 - (levels / 9))
 
     return payoff
 
@@ -127,24 +132,22 @@ def print_state(state):
     print(divider.join(rows))
 
 
-def find_spne(root, player, level=0):
+def find_spne(root, player):
     if len(root.children) == 0:
-        return root, level
+        return root
 
-    choice_level = None
     choice = Node()
     choice.payoff = [-1000, -1000]
 
     for child in root.children:
-        spne_node, spne_level = find_spne(child, 1 - player, level+1)
+        spne_node = find_spne(child, 1 - player)
         if spne_node.payoff[player] > choice.payoff[player]:
             choice = spne_node
-            choice_level = spne_level
 
     n = deepcopy(root)
     n.children = [choice]
     n.payoff = choice.payoff
-    return n, choice_level
+    return n
 
 
 def find_spne_state(root):
@@ -157,6 +160,7 @@ def find_spne_state(root):
 def main(args):
     global MAX_LEVEL
     global PAYOFFS
+    global GOAL
 
     if args.v:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -168,6 +172,9 @@ def main(args):
     PAYOFFS["lose"] = args.lose
     PAYOFFS["tie"] = args.tie
     logging.debug("Payoffs: %s", PAYOFFS)
+
+    # goal
+    GOAL = args.goal
 
     # game state
     starting_state = args.starting_state
@@ -189,7 +196,7 @@ def main(args):
 
     # spne
     start = time()
-    spne, level = find_spne(gt, player)
+    spne = find_spne(gt, player)
     end = time()
 
     ml = MAX_LEVEL
@@ -199,7 +206,6 @@ def main(args):
     MAX_LEVEL = ml
 
     print_state(find_spne_state(spne))
-    logging.debug("SPNE has %d levels", level)
     logging.debug("Time to find SPNE: %f seconds", end - start)
 
 if __name__ == "__main__":
