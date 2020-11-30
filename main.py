@@ -104,8 +104,8 @@ def build_subgame(root, spaces, player, level=1):
 
 def utility(payoff, levels):
     if GOAL == "shortest":
-        min_turns = 3
-        return payoff * (1 - (levels / 9))
+        max_levels = 9
+        return payoff * (1 - (levels / (max_levels + 1)))
 
     return payoff
 
@@ -171,10 +171,11 @@ def main(args):
     PAYOFFS["win"] = args.win
     PAYOFFS["lose"] = args.lose
     PAYOFFS["tie"] = args.tie
-    logging.debug("Payoffs: %s", PAYOFFS)
+    logging.info("Payoffs: %s", PAYOFFS)
 
     # goal
     GOAL = args.goal
+    logging.info("Goal: %s", GOAL)
 
     # game state
     starting_state = args.starting_state
@@ -186,15 +187,18 @@ def main(args):
 
     # player
     player = parse_player(args.player)
-    logging.debug("Whose turn: player %d %s", player, PLAYERS[player])
+    logging.info("Whose turn: player %d %s", player, PLAYERS[player])
 
     # game tree
     gt = Node(player=player, state=starting_state)
     num_subgames = build_subgame(gt, free_spaces, player)
-    logging.debug(f"Number of subgames: {num_subgames}")
-    print(gt)
+    logging.debug("Built game tree")
+    logging.info(f"Number of possible outcomes: {num_subgames}")
+    if MAX_LEVEL > 0:
+        print(gt)
 
     # spne
+    logging.debug("Finding SPNE")
     start = time()
     spne = find_spne(gt, player)
     end = time()
