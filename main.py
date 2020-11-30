@@ -1,7 +1,10 @@
 from argparse import ArgumentParser
 from copy import deepcopy
 import logging
+import inspect
 from time import time
+
+import goals
 
 PLAYERS = ["x", "o"]
 COLORS = ["\033[91m", "\033[94m"]  # red  # blue
@@ -107,11 +110,8 @@ def build_subgame(root, spaces, player, level=1):
 
 
 def utility(payoff, levels):
-    if GOAL == "shortest":
-        max_levels = 9
-        return payoff * (1 - (levels / (max_levels + 1)))
-
-    return payoff
+    penalty = getattr(goals, GOAL)(payoff, levels)
+    return payoff * penalty
 
 
 def parse_player(value):
@@ -243,8 +243,8 @@ if __name__ == "__main__":
         "-g",
         "--goal",
         type=str,
-        default=None,
-        choices=["none", "shortest"],
+        default="default",
+        choices=[f[0] for f in inspect.getmembers(goals, inspect.isfunction)],
         help="Goal for utility function",
     )
     args = ap.parse_args()
