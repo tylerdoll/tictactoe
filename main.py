@@ -84,24 +84,24 @@ def build_subgame(root, spaces, player, level=1):
         new_state = "".join(new_state)
 
         child = Node(space, player, new_state)
+        pt = utility(PAYOFFS["tie"], level)
+        payoff = [pt, pt]
 
         w = winner(new_state)
         if w:
             player_wins = w == PLAYERS[player]
 
-            pt = utility(PAYOFFS["tie"], level)
             pw = utility(PAYOFFS["win"], level)
             pl = utility(PAYOFFS["lose"], level)
 
-            payoff = [pt] * 2
             payoff[player] = pw if player_wins else pl
             payoff[1 - player] = pl if player_wins else pw
-            child.payoff = payoff
 
             free_spaces = []
         else:
             free_spaces = [s for s in spaces if s != space]
 
+        child.payoff = payoff
         num_games += build_subgame(child, free_spaces, 1 - player, level + 1)
 
         root.add_child(child)
@@ -170,6 +170,8 @@ def main(args):
 
     if args.v:
         logging.getLogger().setLevel(logging.DEBUG)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
 
     MAX_LEVEL = args.gt
     logging.debug("Game tree max display level: %d", MAX_LEVEL)
